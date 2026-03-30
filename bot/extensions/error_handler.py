@@ -53,6 +53,7 @@ class ErrorHandler(Cog):
         logger.error(log_message)
         await ctx.send(f'**ERROR**: {message}')
 
+    @classmethod
     async def send_interaction_message(
         cls,
         interaction: Interaction,
@@ -128,13 +129,6 @@ class ErrorHandler(Cog):
         if hasattr(interaction.command, 'on_error') and\
         not getattr(error, 'ignore_local_handler', False):
             return
-
-        if isinstance(error, exceptions.HasRole):
-            return await ErrorHandler.send_interaction_message(
-                interaction,
-                error,
-                'You already have a role!'
-            )
 
         if isinstance(error, exceptions.MissingRequiredScope):
             return await ErrorHandler.send_interaction_message(
