@@ -1,11 +1,10 @@
 import importlib
 from logging import getLogger
+from typing import Optional
 
 from discord import Interaction
 from discord.app_commands import (
     AppCommandError,
-    CheckFailure,
-    CommandInvokeError as AppCommandInvokeError,
     CommandLimitReached,
     CommandSyncFailure,
     MissingApplicationID,
@@ -15,8 +14,7 @@ from discord.ext.commands import (
     Bot,
     Cog,
     Context,
-    CommandError,
-    CommandInvokeError
+    CommandError
 )
 
 import bot.utils as utils
@@ -58,7 +56,8 @@ class ErrorHandler(Cog):
         cls,
         interaction: Interaction,
         error: AppCommandError,
-        message: str
+        message: str,
+        ephemeral: Optional[bool] = True
     ) -> None:
         log_message = 'Error happened during app command execution: '\
         f'{interaction.command} | {interaction.user}: '\
@@ -67,18 +66,20 @@ class ErrorHandler(Cog):
         logger.error(log_message)
         await interaction.response.send_message(
             f'**ERROR**: {message}',
-            ephemeral = True
+            ephemeral = ephemeral
         )
 
     @Cog.listener()
     async def on_command_error(self, ctx: Context, error: CommandError):
-        if isinstance(error, CommandInvokeError):
-            error = error.original
+        if hasattr(error, 'original'):
+            error = getattr(error, 'original')
 
-        if getattr(error, 'ignore_local_handler', False):
-            pass
+        error_code = getattr(error, 'code', None)
+
         # Ignore commands with their own error handlers.
-        elif hasattr(ctx.command, 'on_error'):    return
+        if hasattr(ctx.command, 'on_error') and\
+        not getattr(error, 'ignore_local_handler', False):
+            return
 
         if isinstance(error, exceptions.CantMessage):
             logger.error(
@@ -123,8 +124,10 @@ class ErrorHandler(Cog):
         interaction: Interaction,
         error: AppCommandError
     ):
-        if isinstance(error, (AppCommandInvokeError, CheckFailure)):
-            error = error.original if hasattr(error, 'original') else error
+        if hasattr(error, 'original'):
+            error = getattr(error, 'original')
+
+        error_code = getattr(error, 'code', None)
 
         if hasattr(interaction.command, 'on_error') and\
         not getattr(error, 'ignore_local_handler', False):

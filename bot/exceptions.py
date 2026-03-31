@@ -4,6 +4,8 @@ from discord import Guild, TextChannel
 from discord.app_commands import AppCommandError
 
 class BaseExc(AppCommandError):
+    code = 'base_exception'
+
     ignore_local_handler = True
 
 class CantMessage(BaseExc):

@@ -48,7 +48,7 @@ async def setup(bot: Bot):
     await bot.add_cog(MyCog(bot))
 ```
 
-3. Define a database table (bot/db/models/role.py).
+3. Define a database table (bot/db/models/role.py):
 ```py
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -60,7 +60,31 @@ class Role(BaseModel):
     user_id: Mapped[int] = mapped_column(nullable = False)
 ```
 
-4. Finally, run the bot with `python main.py`
+4. Define a custom exception (bot/exceptions.py):
+```py
+class RoleAlreadyExists(BaseExc):
+    # This is used to compare exceptions in error handling.
+    code = 'role_already_exists'
+
+    def __init__(self, role_id: int, user_id: int, guild_id: int):
+        self.role_id = role_id
+        self.user_id = user_id
+        self.guild_id = guild_id
+```
+
+5. Handle custom exception (bot/extensions/error_handler.py):
+```py
+...
+
+if error_code == 'role_already_exists':
+    return await ErrorHandler.send_interaction_message(
+        interaction,
+        error,
+        'You already have a role!'
+    )
+```
+
+6. Finally, run the bot with `python main.py`
 
 ## Features
 * Logging into a log file
